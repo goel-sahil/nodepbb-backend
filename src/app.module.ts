@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseConfigService } from './config/database.config/database.config.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { HealthModule } from './health/health.module';
       useClass: DatabaseConfigService,
     }),
     HealthModule,
+    ApplicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
