@@ -14,6 +14,7 @@ import { Post } from './Post.entity';
 import { Thread } from './Thread.entity';
 import { Attachment } from './Attachment.entity';
 import { PostThanks } from './PostThanks.entity';
+import { Otp } from './Otp.entity';
 
 @Entity('users')
 export class User {
@@ -62,6 +63,9 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   lastip: string;
 
+  @Column({ type: 'date', nullable: true })
+  dob: string;
+
   @Column({ type: 'int', default: 0 })
   timeonline: number;
 
@@ -79,6 +83,12 @@ export class User {
 
   @Column({ type: 'int', default: 0 })
   thanks: number;
+
+  @Column({ type: 'int', default: 0 })
+  gender: number;
+
+  @Column({ type: 'int', default: 0 })
+  status: number;
 
   @ManyToOne(() => UserGroup, (userGroup) => userGroup.user)
   @JoinColumn({ name: 'user_group_id' })
@@ -102,6 +112,9 @@ export class User {
 
   @OneToMany(() => PostThanks, (thanks) => thanks.recipient)
   thanks_received: PostThanks[]; // Thanks received by the user
+
+  @OneToMany(() => Otp, (otp) => otp.user)
+  otps: Otp[];
 
   @CreateDateColumn()
   created_at: Date;

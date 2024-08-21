@@ -11,7 +11,7 @@ import { ForumsService } from './forums.service';
 import { CreateForumDto } from './dto/create-forum.dto';
 import { UpdateForumDto } from './dto/update-forum.dto';
 
-@Controller('forums')
+@Controller('admin/forums')
 export class ForumsController {
   constructor(private readonly forumsService: ForumsService) {}
 
