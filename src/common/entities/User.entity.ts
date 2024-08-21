@@ -22,6 +22,9 @@ export class User {
   id: number;
 
   @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @Column({ type: 'varchar', length: 255 })
   username: string;
 
   @Column({ type: 'varchar', length: 255 })
