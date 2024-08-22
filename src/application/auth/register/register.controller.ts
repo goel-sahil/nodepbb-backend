@@ -5,7 +5,7 @@ import { Request } from 'express';
 import { CheckUsernameEmailDto } from './dto/check_username_email.dto';
 import { OtpDto } from './dto/otp.dto';
 
-@Controller('register')
+@Controller('auth/register')
 export class RegisterController {
   constructor(private readonly registerService: RegisterService) {}
 

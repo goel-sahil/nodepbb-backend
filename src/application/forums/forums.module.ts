@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import { ForumsController } from './forums.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Category } from 'src/common/entities/Category.entity';
+import { AuthModule } from 'src/common/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category])],
+  imports: [AuthModule],
   controllers: [ForumsController],
   providers: [ForumsService],
 })
