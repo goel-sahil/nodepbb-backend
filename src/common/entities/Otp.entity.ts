@@ -20,6 +20,9 @@ export class Otp {
   @Column({ type: 'int', default: null })
   user_id: number;
 
+  @Column({ type: 'int', default: 0 })
+  otp_type: number;
+
   @ManyToOne(() => User, (user) => user.otps)
   @JoinColumn({ name: 'user_id' })
   user: User;

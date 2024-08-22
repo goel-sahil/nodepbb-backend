@@ -45,5 +45,5 @@ export class UserRegisterDto {
   })
   @IsNotEmpty()
   @IsString()
-  dob: string;
+  date_of_birth: string;
 }

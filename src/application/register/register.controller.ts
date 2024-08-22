@@ -49,13 +49,13 @@ export class RegisterController {
 
   /**
    * Retrieves the status of a user by ID.
-   * @param userID - The ID of the user.
+   * @param userId - The ID of the user.
    * @returns A message and the user's status.
    */
-  @Get('/user-status/:userID')
-  async checkUserStatus(@Param('userID') userID: number) {
+  @Get('/user-status/:userId')
+  async getUserStatus(@Param('userId') userId: number) {
     // Fetch the user status
-    const status = await this.registerService.checkUserStatus(userID);
+    const status = await this.registerService.getUserStatus(userId);
     return {
       message: 'User status retrieved successfully!',
       data: status,
@@ -64,16 +64,29 @@ export class RegisterController {
 
   /**
    * Verifies the OTP for a user.
-   * @param userID - The ID of the user to verify.
+   * @param userId - The ID of the user to verify.
    * @param body - The OTP data.
    * @returns A message and the verified user data.
    */
-  @Post('/verify-otp/:userID')
-  async verifyUserOTP(@Param('userID') userID: number, @Body() body: OtpDto) {
+  @Post('/verify-otp/:userId')
+  async verifyUserOTP(@Param('userId') userId: number, @Body() body: OtpDto) {
     // Verify the OTP and return the result
-    await this.registerService.verifyUserOTP(userID, body);
+    await this.registerService.verifyUserOTP(userId, body);
     return {
       message: 'User has been verified successfully!',
+    };
+  }
+
+  /**
+   * Resend the OTP for a user.
+   * @param userId - The ID of the user to verify.
+   * @returns A message and the verified user data.
+   */
+  @Post('/resend-otp/:userId')
+  async resendUserOTP(@Param('userId') userId: number) {
+    await this.registerService.resendUserOTP(userId);
+    return {
+      message: 'New OTP has been sent to your email!',
     };
   }
 

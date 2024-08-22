@@ -1,22 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import {
+  SequelizeModuleOptions,
+  SequelizeOptionsFactory,
+} from '@nestjs/sequelize';
 
 @Injectable()
-export class DatabaseConfigService implements TypeOrmOptionsFactory {
+export class DatabaseConfigService implements SequelizeOptionsFactory {
   constructor(private configService: ConfigService) {}
 
-  createTypeOrmOptions(): TypeOrmModuleOptions {
+  createSequelizeOptions(): SequelizeModuleOptions {
     return {
-      type: 'mysql',
+      dialect: 'mysql',
       host: this.configService.get<string>('DB_HOST'),
       port: parseInt(this.configService.get<string>('DB_PORT', '3306'), 10),
       username: this.configService.get<string>('DB_USERNAME'),
       password: this.configService.get<string>('DB_PASSWORD'),
       database: this.configService.get<string>('DB_DATABASE'),
       logging: true, // Enable logging to debug issues
-      entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
+      models: [__dirname + '/../../**/*.model{.ts,.js}'],
       synchronize: this.configService.get<boolean>('TYPEORM_SYNC') || true,
+      autoLoadModels: true,
     };
   }
 }

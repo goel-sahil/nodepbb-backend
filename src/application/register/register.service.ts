@@ -1,46 +1,34 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { User } from 'src/common/entities/User.entity';
-import { UserGroup } from 'src/common/entities/UserGroup.entity';
-import { UserTitle } from 'src/common/entities/UserTitle.entity';
-import { Otp } from 'src/common/entities/Otp.entity';
+import User from 'src/common/models/User.model';
+import Otp from 'src/common/models/Otp.model';
+import UserGroup from 'src/common/models/UserGroup.model';
+import UserTitle from 'src/common/models/UserTitle.model';
 import { OtpService } from 'src/common/services/otp/otp.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UserRegisterDto } from './dto/register_user.dto';
 import { CheckUsernameEmailDto } from './dto/check_username_email.dto';
 import { OtpDto } from './dto/otp.dto';
-
-interface CreateUserDto {
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-  dob: string;
-  gender: number;
-  user_group_id: number;
-  user_title_id: number;
-  regip: string;
-  lastip: string;
-  status: number;
-}
-
+import { InjectModel } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
+import { UserNotFoundException } from 'src/common/exceptions/UserNotFoundException.exception';
+import { UserIsActiveException } from 'src/common/exceptions/UserIsActiveException.exception';
+import { InvalidOtpException } from 'src/common/exceptions/InvalidOTPException.exception';
 @Injectable()
 export class RegisterService {
   private readonly logger = new Logger(RegisterService.name);
 
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(UserGroup)
-    private readonly userGroupRepository: Repository<UserGroup>,
-    @InjectRepository(UserTitle)
-    private readonly userTitleRepository: Repository<UserTitle>,
-    @InjectRepository(Otp) private readonly otpRepository: Repository<Otp>,
+    @InjectModel(User) private readonly userModel: typeof User,
+    @InjectModel(UserGroup) private readonly userGroupModel: typeof UserGroup,
+    @InjectModel(UserTitle) private readonly userTitleModel: typeof UserTitle,
+    @InjectModel(Otp) private readonly otpModel: typeof Otp,
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
     private readonly mailerService: MailerService,
+    private sequelize: Sequelize,
   ) {}
 
   /**
@@ -63,21 +51,18 @@ export class RegisterService {
 
     // Generate OTP
     const otpCode = this.otpService.generateOtp();
+    const data = {
+      ...userDto,
+      password: hashedPassword,
+      user_group_id: userGroup.id,
+      user_title_id: userTitle.id,
+      register_ip: userIp,
+      last_ip: userIp,
+      status: 0,
+    };
 
     // Save user and OTP, and send registration email
-    const user = await this.saveUserWithOtp(
-      {
-        ...userDto,
-        password: hashedPassword,
-        user_group_id: userGroup.id,
-        user_title_id: userTitle.id,
-        regip: userIp,
-        lastip: userIp,
-        status: 0,
-      },
-      otpCode,
-    );
-
+    const user = await this.saveUserWithOtp(data, otpCode);
     await this.sendRegistrationEmail(user.email, user.username, otpCode);
 
     this.logger.log(`User ${user.username} registered successfully`);
@@ -92,9 +77,11 @@ export class RegisterService {
   private async ensureUniqueUser(userDto: UserRegisterDto): Promise<void> {
     this.logger.log('Checking for existing user');
 
-    const existingUser = await this.userRepository.findOne({
-      select: ['id', 'email', 'username'],
-      where: [{ username: userDto.username }, { email: userDto.email }],
+    const existingUser = await this.userModel.findOne({
+      attributes: ['id', 'email', 'username'],
+      where: {
+        [Op.or]: [{ username: userDto.username }, { email: userDto.email }],
+      },
     });
 
     if (existingUser) {
@@ -134,20 +121,17 @@ export class RegisterService {
   private async getDefaultGroupAndTitle(): Promise<[UserGroup, UserTitle]> {
     this.logger.log('Fetching default user group and title');
 
-    const userGroup = await this.userGroupRepository.findOne({
-      select: ['id'],
+    const [userGroup] = await this.userGroupModel.findOrCreate({
       where: { title: 'Registered' },
+      defaults: {
+        name_style: 'Registered',
+        display_order: 1,
+      },
     });
 
-    const userTitle = await this.userTitleRepository.findOne({
-      select: ['id'],
+    const [userTitle] = await this.userTitleModel.findOrCreate({
       where: { title: 'Newbie' },
     });
-
-    if (!userGroup || !userTitle) {
-      this.logger.error('Default user group or title not found');
-      throw new Error('Default user group or title not found');
-    }
 
     return [userGroup, userTitle];
   }
@@ -158,29 +142,29 @@ export class RegisterService {
    * @param otpCode - The OTP code to save.
    * @returns The saved user.
    */
-  private async saveUserWithOtp(
-    userDetails: CreateUserDto,
-    otpCode: string,
-  ): Promise<User> {
+  private async saveUserWithOtp(userDetails, otpCode: string): Promise<User> {
     this.logger.log('Saving user and OTP in a transaction');
-
-    return await this.userRepository.manager.transaction(
-      async (manager: EntityManager) => {
-        const user = this.userRepository.create(userDetails);
-        const savedUser = await manager.save(user);
-
-        const otp = this.otpRepository.create({
-          user_id: savedUser.id,
+    const user = await this.sequelize.transaction(async (t) => {
+      const transactionHost = { transaction: t };
+      const user = await this.userModel.create(userDetails, transactionHost);
+      await this.otpModel.create(
+        {
+          user_id: user.id,
           otp: otpCode,
-        });
-        await manager.save(otp);
+          otpType: 1,
+        },
+        {
+          ...transactionHost,
+          returning: true,
+        },
+      );
 
-        this.logger.log(
-          `User and OTP saved successfully with user ID: ${savedUser.id}`,
-        );
-        return savedUser;
-      },
-    );
+      this.logger.log(
+        `User and OTP saved successfully with user ID: ${user.id}`,
+      );
+      return user;
+    });
+    return user;
   }
 
   /**
@@ -217,7 +201,8 @@ export class RegisterService {
    * @returns Object indicating if the value is unique or not.
    */
   async checkUnique(field: string, dto: CheckUsernameEmailDto) {
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.userModel.findOne({
+      attributes: ['id'],
       where: { [field]: dto.value },
     });
 
@@ -226,18 +211,18 @@ export class RegisterService {
 
   /**
    * Checks the status of a user by ID.
-   * @param userID - The ID of the user.
+   * @param userId - The ID of the user.
    * @returns The user's status.
    * @throws BadRequestException if the user does not exist.
    */
-  async checkUserStatus(userID: number) {
-    const user = await this.userRepository.findOne({
-      select: ['status'],
-      where: { id: userID },
+  async getUserStatus(userId: number) {
+    const user = await this.userModel.findOne({
+      attributes: ['status'],
+      where: { id: userId },
     });
 
     if (!user) {
-      throw new BadRequestException('User does not exist!');
+      throw new UserNotFoundException();
     }
 
     return { status: user.status };
@@ -245,43 +230,94 @@ export class RegisterService {
 
   /**
    * Verifies the user's OTP and updates their status if valid.
-   * @param userID - The ID of the user to verify.
+   * @param userId - The ID of the user to verify.
    * @param otpDto - The OTP data.
    * @returns The updated user information.
    * @throws BadRequestException if user or OTP is invalid.
    */
-  async verifyUserOTP(userID: number, otpDto: OtpDto) {
+  async verifyUserOTP(userId: number, otpDto: OtpDto) {
     this.logger.log('Verifying user OTP');
 
-    const user = await this.userRepository.findOne({
-      select: ['id', 'status'],
-      where: { id: userID },
+    const [user, otp] = await Promise.all([
+      this.getUserForVerification(userId),
+      this.getOtpForVerification(userId, otpDto.otp),
+    ]);
+
+    await this.updateUserStatusAndDeleteOtp(user, otp);
+  }
+
+  private async getUserForVerification(userId: number): Promise<User> {
+    const user = await this.userModel.findOne({
+      attributes: ['id', 'status'],
+      where: { id: userId },
     });
 
     if (!user) {
-      throw new BadRequestException('User does not exist!');
+      throw new UserNotFoundException();
     }
 
     if (user.status == 1) {
-      throw new BadRequestException('User is already active!');
+      throw new UserIsActiveException();
     }
 
-    const otp = await this.otpRepository.findOne({
-      select: ['id'],
-      where: { user_id: userID, otp: otpDto.otp },
+    return user;
+  }
+
+  private async getOtpForVerification(
+    userId: number,
+    otpCode: string,
+  ): Promise<Otp> {
+    const otp = await this.otpModel.findOne({
+      attributes: ['id'],
+      where: { user_id: userId, otp: otpCode },
     });
 
     if (!otp) {
-      throw new BadRequestException('Invalid OTP!');
+      throw new InvalidOtpException();
+    }
+    return otp;
+  }
+
+  private async updateUserStatusAndDeleteOtp(user: User, otp: Otp) {
+    await this.sequelize.transaction(async (t) => {
+      user.status = 1;
+      await user.save({ transaction: t });
+      await otp.destroy({ transaction: t });
+    });
+  }
+
+  /**
+   * Resend the user's OTP.
+   * @param userId - The ID of the user.
+   * @throws BadRequestException if user or OTP is invalid.
+   */
+  async resendUserOTP(userId: number) {
+    this.logger.log('Resending user OTP');
+
+    const user = await this.userModel.findOne({
+      attributes: ['id', 'status', 'email', 'username'],
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException();
     }
 
-    await this.userRepository.manager.transaction(
-      async (manager: EntityManager) => {
-        await manager.getRepository(this.otpRepository.target).delete(otp.id);
-        await manager
-          .getRepository(this.userRepository.target)
-          .update(user.id, { status: 1 });
+    if (user.status == 1) {
+      throw new UserIsActiveException();
+    }
+
+    const otpCode = this.otpService.generateOtp();
+    await this.otpModel.upsert(
+      {
+        user_id: userId,
+        otp_type: 1,
+        otp: otpCode,
+      },
+      {
+        conflictFields: ['user_id', 'otp_type'],
       },
     );
+    await this.sendRegistrationEmail(user.email, user.username, otpCode);
   }
 }

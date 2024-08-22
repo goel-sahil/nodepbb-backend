@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseConfigService } from './config/database.config/database.config.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthModule } from './health/health.module';
-import { ApplicationModule } from './application/application.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailConfigService } from './config/mail.config/mail.config.service';
+import { SequelizeModule } from '@nestjs/sequelize';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
   imports: [
@@ -19,11 +19,11 @@ import { MailConfigService } from './config/mail.config/mail.config.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRootAsync({
-      useClass: DatabaseConfigService,
-    }),
     MailerModule.forRootAsync({
       useClass: MailConfigService,
+    }),
+    SequelizeModule.forRootAsync({
+      useClass: DatabaseConfigService,
     }),
     HealthModule,
     ApplicationModule,
