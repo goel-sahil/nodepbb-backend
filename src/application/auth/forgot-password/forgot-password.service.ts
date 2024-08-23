@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import User from 'src/common/models/User.model';
 import { RequestPasswordDto } from './dto/request-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserNotFoundException } from 'src/common/exceptions/UserNotFoundException.exception';
 import Otp from 'src/common/models/Otp.model';
-import { InvalidOtpException } from 'src/common/exceptions/InvalidOTPException.exception';
 import { AuthService } from 'src/common/auth/auth.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { OtpService } from 'src/common/services/otp/otp.service';
@@ -51,7 +50,7 @@ export class ForgotPasswordService {
     );
 
     // Send the OTP to the user's email
-    await this.sendPasswordResetOTPMail(user.email, otp.otp);
+    await this.sendPasswordResetOTPMail(user, otp.otp);
   }
 
   /**
@@ -75,7 +74,9 @@ export class ForgotPasswordService {
     });
 
     if (!otp) {
-      throw new InvalidOtpException();
+      throw new BadRequestException({
+        message: 'Password link has been expired. Please try again!',
+      });
     }
 
     // Hash the new password and update the user's record
@@ -84,7 +85,7 @@ export class ForgotPasswordService {
     await user.save();
 
     // Send a success email to the user
-    await this.sendPasswordResetSuccessMail(user.email);
+    await this.sendPasswordResetSuccessMail(user);
   }
 
   /**
@@ -93,16 +94,18 @@ export class ForgotPasswordService {
    * @param otp - The OTP code to include in the email.
    */
   private async sendPasswordResetOTPMail(
-    email: string,
+    user: User,
     otp: string,
   ): Promise<void> {
     await this.mailerService.sendMail({
-      to: email,
+      to: user.email,
       subject: 'Password Reset Request',
       template: 'password_reset_otp', // Ensure this template exists
       context: {
         appName: 'NodePBB',
         otp: otp,
+        username: user.username,
+        userId: user.id,
       },
     });
   }
@@ -111,13 +114,14 @@ export class ForgotPasswordService {
    * Sends an email notification to the user after their password has been successfully reset.
    * @param email - The user's email address.
    */
-  private async sendPasswordResetSuccessMail(email: string): Promise<void> {
+  private async sendPasswordResetSuccessMail(user: User): Promise<void> {
     await this.mailerService.sendMail({
-      to: email,
+      to: user.email,
       subject: 'Password Reset Successful',
       template: 'password_reset_success', // Ensure this template exists
       context: {
         appName: 'NodePBB',
+        username: user.username,
       },
     });
   }

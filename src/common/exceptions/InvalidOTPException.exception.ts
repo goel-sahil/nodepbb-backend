@@ -6,7 +6,7 @@ export class InvalidOtpException extends HttpException {
       {
         message: 'The given data is invalid.',
         errors: {
-          otp: ['Invalid OTP'],
+          otp0: ['Invalid OTP'],
         },
       },
       HttpStatus.UNPROCESSABLE_ENTITY,

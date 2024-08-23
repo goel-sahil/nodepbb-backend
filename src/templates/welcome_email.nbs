@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Welcome to {{appName}}</title>
+  </head>
+  <body
+    style="font-family: Arial, sans-serif; margin: 20px; padding: 20px; background-color: #f4f4f4;"
+  >
+    <h1>Welcome to {{appName}}, {{username}}!</h1>
+    <p>
+      We're excited to have you on board. Thank you for joining our community at
+      {{appName}}!
+    </p>
+    <p>
+      You can now explore all the features and services we have to offer. If you
+      have any questions, feel free to reach out to our support team at any
+      time.
+    </p>
+    <p>
+      To get started, visit your profile:
+      <a href="http://localhost:3000/profile/{{userId}}">
+        View Your Profile
+      </a>
+    </p>
+    <p>
+      We hope you enjoy your experience with {{appName}}. Welcome aboard!
+    </p>
+    <p>
+      Best regards,<br />
+      The {{appName}} Team
+    </p>
+  </body>
+</html>
