@@ -17,7 +17,7 @@ export class DatabaseConfigService implements SequelizeOptionsFactory {
       username: this.configService.get<string>('DB_USERNAME'),
       password: this.configService.get<string>('DB_PASSWORD'),
       database: this.configService.get<string>('DB_DATABASE'),
-      logging: true, // Enable logging to debug issues
+      logging: console.log,
       models: [__dirname + '/../../**/*.model{.ts,.js}'],
       synchronize: this.configService.get<boolean>('TYPEORM_SYNC') || true,
       autoLoadModels: true,

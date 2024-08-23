@@ -1,6 +1,4 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
 import User from 'src/common/models/User.model';
 import Otp from 'src/common/models/Otp.model';
 import UserGroup from 'src/common/models/UserGroup.model';
@@ -16,6 +14,7 @@ import { Op } from 'sequelize';
 import { UserNotFoundException } from 'src/common/exceptions/UserNotFoundException.exception';
 import { UserIsActiveException } from 'src/common/exceptions/UserIsActiveException.exception';
 import { InvalidOtpException } from 'src/common/exceptions/InvalidOTPException.exception';
+import { AuthService } from 'src/common/auth/auth.service';
 @Injectable()
 export class RegisterService {
   private readonly logger = new Logger(RegisterService.name);
@@ -25,7 +24,7 @@ export class RegisterService {
     @InjectModel(UserGroup) private readonly userGroupModel: typeof UserGroup,
     @InjectModel(UserTitle) private readonly userTitleModel: typeof UserTitle,
     @InjectModel(Otp) private readonly otpModel: typeof Otp,
-    private readonly configService: ConfigService,
+    private readonly authService: AuthService,
     private readonly otpService: OtpService,
     private readonly mailerService: MailerService,
     private sequelize: Sequelize,
@@ -44,7 +43,9 @@ export class RegisterService {
     await this.ensureUniqueUser(userDto);
 
     // Hash the user's password
-    const hashedPassword = await this.hashPassword(userDto.password);
+    const hashedPassword = await this.authService.hashPassword(
+      userDto.password,
+    );
 
     // Fetch default user group and title
     const [userGroup, userTitle] = await this.getDefaultGroupAndTitle();
@@ -97,20 +98,6 @@ export class RegisterService {
         `Username: ${userDto.username} is already taken`,
       );
     }
-  }
-
-  /**
-   * Hashes the user's password using bcrypt.
-   * @param password - The plain text password.
-   * @returns The hashed password.
-   */
-  private async hashPassword(password: string): Promise<string> {
-    this.logger.log('Hashing password');
-    const saltRounds = parseInt(
-      this.configService.get<string>('HASH_SALT_ROUNDS'),
-      10,
-    );
-    return bcrypt.hash(password, saltRounds);
   }
 
   /**

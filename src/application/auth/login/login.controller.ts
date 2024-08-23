@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { LoginService } from './login.service';
 import { LoginDto } from './dto/login.dto';
 
@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 export class LoginController {
   constructor(private readonly loginService: LoginService) {}
 
+  @HttpCode(200)
   @Post()
   async login(@Body() body: LoginDto) {
     const data = await this.loginService.login(body);

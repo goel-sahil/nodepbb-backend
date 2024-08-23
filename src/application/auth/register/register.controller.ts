@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { RegisterService } from './register.service';
 import { UserRegisterDto } from './dto/register_user.dto';
 import { Request } from 'express';
@@ -34,6 +42,7 @@ export class RegisterController {
    * @param body - The data containing the value to check.
    * @returns A message and the uniqueness status.
    */
+  @HttpCode(200)
   @Post('/:field')
   async checkUnique(
     @Param('field') field: string,
@@ -68,6 +77,7 @@ export class RegisterController {
    * @param body - The OTP data.
    * @returns A message and the verified user data.
    */
+  @HttpCode(200)
   @Post('/verify-otp/:userId')
   async verifyUserOTP(@Param('userId') userId: number, @Body() body: OtpDto) {
     // Verify the OTP and return the result
@@ -82,6 +92,7 @@ export class RegisterController {
    * @param userId - The ID of the user to verify.
    * @returns A message and the verified user data.
    */
+  @HttpCode(200)
   @Post('/resend-otp/:userId')
   async resendUserOTP(@Param('userId') userId: number) {
     await this.registerService.resendUserOTP(userId);

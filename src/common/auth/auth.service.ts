@@ -4,12 +4,14 @@ import { InjectModel } from '@nestjs/sequelize';
 import User from 'src/common/models/User.model';
 import * as bcrypt from 'bcrypt';
 import { Op } from 'sequelize';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User) private readonly userModel: typeof User,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -38,7 +40,7 @@ export class AuthService {
    * @param usernameOrEmail - The username or email of the user.
    * @returns The user if found, otherwise null.
    */
-  private async findUserByUsernameOrEmail(
+  async findUserByUsernameOrEmail(
     usernameOrEmail: string,
   ): Promise<User | null> {
     return this.userModel.findOne({
@@ -59,6 +61,19 @@ export class AuthService {
     hashedPassword: string,
   ): Promise<boolean> {
     return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  /**
+   * Hashes the user's password using bcrypt.
+   * @param password - The plain text password.
+   * @returns The hashed password.
+   */
+  async hashPassword(password: string): Promise<string> {
+    const saltRounds = parseInt(
+      this.configService.get<string>('HASH_SALT_ROUNDS'),
+      10,
+    );
+    return bcrypt.hash(password, saltRounds);
   }
 
   /**
