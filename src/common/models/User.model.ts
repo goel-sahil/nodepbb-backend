@@ -4,14 +4,22 @@ import {
   DataType,
   ForeignKey,
   HasMany,
+  HasOne,
   Model,
   Table,
 } from 'sequelize-typescript';
 import Otp from './Otp.model';
 import UserGroup from './UserGroup.model';
 import UserTitle from './UserTitle.model';
+import Session from './Session.model';
+import Shout from './Shout.model';
 
-@Table({ underscored: true, timestamps: true })
+@Table({
+  underscored: true,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+})
 export default class User extends Model {
   @Column({ type: DataType.STRING(255) })
   declare name: string;
@@ -42,11 +50,11 @@ export default class User extends Model {
   @Column({ type: DataType.STRING(255), allowNull: true })
   declare avatar: string;
 
-  @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  declare last_active: number;
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare last_active: Date;
 
-  @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  declare last_visit: number;
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare last_visit: Date;
 
   @Column({ type: DataType.INTEGER, allowNull: true })
   declare last_post_id: number;
@@ -62,9 +70,6 @@ export default class User extends Model {
 
   @Column({ type: DataType.DATEONLY, allowNull: true })
   declare date_of_birth: string;
-
-  @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  declare time_online: number;
 
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
   declare total_uploads: number;
@@ -95,4 +100,10 @@ export default class User extends Model {
 
   @HasMany(() => Otp, { foreignKey: 'user_id' })
   declare otps: Otp[];
+
+  @HasMany(() => Shout, { foreignKey: 'user_id' })
+  declare shouts: Shout[];
+
+  @HasOne(() => Session, { foreignKey: 'user_id' })
+  declare session: Session[];
 }

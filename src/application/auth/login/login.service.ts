@@ -13,7 +13,10 @@ export class LoginService {
    * @returns An object containing the user and JWT token if credentials are valid.
    * @throws UnauthorizedException if the credentials are invalid.
    */
-  async login(loginDto: LoginDto): Promise<{ user: User; token?: string }> {
+  async login(
+    loginDto: LoginDto,
+    ip: string,
+  ): Promise<{ user: User; token?: string }> {
     // Validate user credentials
     const user = await this.authService.validateUser(
       loginDto.username,
@@ -35,6 +38,13 @@ export class LoginService {
         user,
       };
     }
+
+    const now = new Date();
+
+    user.last_ip = ip;
+    user.last_visit = now;
+    user.last_active = now;
+    await user.save();
 
     // Return user details and JWT token
     return {

@@ -1,7 +1,12 @@
 import { Table, Column, Model, HasMany, DataType } from 'sequelize-typescript';
 import User from './User.model';
 
-@Table({ underscored: true, timestamps: true })
+@Table({
+  underscored: true,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+})
 export default class UserGroup extends Model {
   @Column({ type: DataType.STRING(120), allowNull: false })
   declare title: string;
