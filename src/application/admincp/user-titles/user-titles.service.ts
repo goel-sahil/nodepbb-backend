@@ -2,14 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { CreateUserTitleDto } from './dto/create-user-title.dto';
 import { UpdateUserTitleDto } from './dto/update-user-title.dto';
-import { UserTitle } from 'src/common/entities/UserTitle.entity';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectModel } from '@nestjs/sequelize';
+import UserTitle from 'src/common/models/UserTitle.model';
 
 @Injectable()
 export class UserTitlesService {
   constructor(
-    @InjectRepository(UserTitle)
-    private readonly userTitleRepository: Repository<UserTitle>,
+    @InjectModel(UserTitle)
+    private readonly userTitleModel: Repository<UserTitle>,
   ) {}
 
   /**
@@ -18,8 +18,8 @@ export class UserTitlesService {
    * @returns The newly created user title.
    */
   async create(body: CreateUserTitleDto): Promise<UserTitle> {
-    const newUserTitle = this.userTitleRepository.create(body);
-    return this.userTitleRepository.save(newUserTitle);
+    const newUserTitle = this.userTitleModel.create(body);
+    return this.userTitleModel.save(newUserTitle);
   }
 
   /**
@@ -27,7 +27,7 @@ export class UserTitlesService {
    * @returns An array of user titles.
    */
   async findAll(): Promise<UserTitle[]> {
-    return this.userTitleRepository.find();
+    return this.userTitleModel.find();
   }
 
   /**
@@ -37,7 +37,7 @@ export class UserTitlesService {
    * @throws NotFoundException if the user title is not found.
    */
   async findOne(id: number): Promise<UserTitle> {
-    const userTitle = await this.userTitleRepository.findOne({ where: { id } });
+    const userTitle = await this.userTitleModel.findOne({ where: { id } });
     this.throwIfNotFound(!userTitle, id);
     return userTitle;
   }
@@ -50,12 +50,12 @@ export class UserTitlesService {
    * @throws NotFoundException if the user title is not found.
    */
   async update(id: number, body: UpdateUserTitleDto): Promise<UserTitle> {
-    const userTitle = await this.userTitleRepository.preload({
+    const userTitle = await this.userTitleModel.preload({
       id,
       ...body,
     });
     this.throwIfNotFound(!userTitle, id);
-    return this.userTitleRepository.save(userTitle);
+    return this.userTitleModel.save(userTitle);
   }
 
   /**
@@ -65,7 +65,7 @@ export class UserTitlesService {
    * @throws NotFoundException if the user title is not found.
    */
   async remove(id: number): Promise<void> {
-    const result = await this.userTitleRepository.delete(id);
+    const result = await this.userTitleModel.delete(id);
     this.throwIfNotFound(result.affected === 0, id);
   }
 

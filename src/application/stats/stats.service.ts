@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
+import Post from 'src/common/models/Post.model';
 import Session from 'src/common/models/Session.model';
+import Thread from 'src/common/models/Thread.model';
 import User from 'src/common/models/User.model';
 import UserGroup from 'src/common/models/UserGroup.model';
 import UserTitle from 'src/common/models/UserTitle.model';
@@ -10,6 +12,8 @@ import UserTitle from 'src/common/models/UserTitle.model';
 export class StatsService {
   constructor(
     @InjectModel(User) private readonly userModel: typeof User,
+    @InjectModel(Thread) private readonly threadModel: typeof Thread,
+    @InjectModel(Post) private readonly postModel: typeof Post,
     @InjectModel(Session) private readonly sessionModel: typeof Session,
   ) {}
 
@@ -59,8 +63,8 @@ export class StatsService {
         guests: totalActiveGuests,
       },
       activeUsers,
-      totalPosts: 20, // Placeholder value, replace with actual data
-      totalThreads: 10, // Placeholder value, replace with actual data
+      totalPosts: await this.postModel.count(),
+      totalThreads: await this.threadModel.count(),
       totalUsers,
       newestUser: newestMember,
     };

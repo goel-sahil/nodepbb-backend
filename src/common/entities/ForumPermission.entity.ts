@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { Forum } from './Forum.entity';
+// import { Forum } from './Forum.entity';
 import { UserGroup } from './UserGroup.entity';
 
 @Entity('forum_permissions')
@@ -48,9 +48,9 @@ export class ForumPermission {
   @Column({ default: true })
   can_delete_threads: boolean;
 
-  @ManyToOne(() => Forum, (forum) => forum.forum_permissions)
-  @JoinColumn({ name: 'forum_id' })
-  forum: Forum;
+  // @ManyToOne(() => Forum, (forum) => forum.forum_permissions)
+  // @JoinColumn({ name: 'forum_id' })
+  // forum: Forum;
 
   @ManyToOne(() => UserGroup, (userGroup) => userGroup.forum_permissions)
   @JoinColumn({ name: 'user_group_id' })

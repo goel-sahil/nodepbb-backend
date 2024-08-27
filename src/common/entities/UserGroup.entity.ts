@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { User } from './User.entity';
 import { ForumPermission } from './ForumPermission.entity';
 
 @Entity('user_groups')
@@ -119,8 +118,8 @@ export class UserGroup {
   @Column({ default: true })
   can_ban_users: boolean;
 
-  @OneToMany(() => User, (user) => user.user_group)
-  user: User[];
+  // @OneToMany(() => User, (user) => user.user_group)
+  // user: User[];
 
   @OneToMany(() => ForumPermission, (permission) => permission.user_group)
   forum_permissions: ForumPermission[];

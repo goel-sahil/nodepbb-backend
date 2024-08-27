@@ -19,7 +19,7 @@ export class DatabaseConfigService implements SequelizeOptionsFactory {
       database: this.configService.get<string>('DB_DATABASE'),
       logging: console.log,
       models: [__dirname + '/../../**/*.model{.ts,.js}'],
-      synchronize: true,
+      synchronize: false,
       autoLoadModels: true,
     };
   }
