@@ -33,6 +33,7 @@ export class ForumsService {
         forum_id: forumId,
       },
     });
+
     const totalPages = Math.ceil(totalThreads / limit);
 
     // Validate and adjust the page number if necessary
